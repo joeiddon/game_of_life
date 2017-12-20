@@ -15,13 +15,59 @@ canvas, button {
     float: left;
 }
 
+#cntrls {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.btn {
+    flex: 1;
+    background-color: black;
+    color: white;
+    text-align: center;
+    font-size: 32px;
+    font-family: monospace;
+    padding: 0;
+    border: none;
+}
+
+.btn:active {
+    border: white 3px;
+    background-color: white;
+    color: black;
+}
+
+.btn:focus {
+    outline: 0;
+}
+
 </style>
 
 </head>
 
 <body>
+
 <canvas id="cnvs"></canvas>
+
+<div id="cntrls">
+
+<button onclick="clearInterval(rnd);rnd=0;initGrid();draw()" class="btn">Restart</button>
+<button onclick="tick()" class="btn">Tick</button>
+<button onclick="dsplyHtks()" class="btn">Hotkeys</button>
+<button onclick="gridSize*=2;initGrid();draw()" class="btn">Increase</button>
+<button onclick="gridSize/=2;initGrid();draw()" class="btn">Decrease</button>
+<button onclick="randScramble()" class="btn">Scramble</button>
+<button onclick="if (rnd){clearInterval(rnd);rnd=0} else {bgnRnd()}" class="btn">Toggle Sequence</button>
+
+</div>
+
+<!--
 <button type="button" onclick="tick()">tick</button>
+-->
+
 <script src="script.js"></script>
+<script src="patterns.js"></script>
+
 </body>
 </html>

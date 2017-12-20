@@ -13,6 +13,7 @@ gridSize = 32
 resize()
 
 function initGrid(){
+    ss = cnvs.width / gridSize
     grid = []
     for (var ri = 0; ri < gridSize; ri++){
         var r = []
@@ -24,50 +25,95 @@ function initGrid(){
 }
 
 initGrid()
+stmp = [[1]]
+rnd = 0
 
-
-rsz = 3 //rand size
-ptrns = patterns(rsz)
-
-cnt = 0
-ptn = 1
-drawPattern(ptrns[0])
-
-setInterval(function(){
-    if (cnt < 50){
-        tick()
-        cnt++;
-    } else {
-        initGrid()
-        drawPattern(ptrns[ptn])
-        ptn = (ptn+1)%Math.pow(2,rsz*rsz);
-        cnt = 0;
-    }
-}, 10)
-
-function patterns(n){
-    var ptrns = []
-    var l = Math.pow(2, n*n)
-    for (var i = 0; i < l; i++){
-        var rws = (i).toString(2).padStart(n*n, '0').match(new RegExp('.{1,'+n+'}', 'g'))
-        var ptrn = []
-        for (var ri = 0; ri < n; ri++){
-            var r = []
-            for (var ci = 0; ci < n; ci++){
-                r.push(parseInt(rws[ri][ci]))
-            }
-            ptrn.push(r)
+function randScramble(){
+    prob = parseFloat(prompt("1 probability"))
+    for (var r = 0; r < gridSize; r++){
+        for (var c = 0; c < gridSize; c++){
+            grid[r][c] = Math.random() < prob
         }
-        ptrns.push(ptrn)
     }
-    return ptrns
+    draw()
 }
 
-function drawPattern(ptrn){
-    for (var r = 0; r < ptrn.length; r++){
-        for (var c = 0; c < ptrn.length; c++){
-            var b = Math.floor(gridSize/2-ptrn.length/2)
-            grid[b+r][b+c] = ptrn[r][c]
+function dsplyHtks(){
+    htks = [["b", "block"],
+            ["g", "glider"],
+            ["l", "LWSS"],
+            ["s", "shooter"],
+            ["entr", "run"]]
+    prnt(htks)
+}
+
+function bgnRnd(){
+    rsz = parseInt(prompt("pattern space"))
+    cntLmt = parseInt(prompt("max ticks"))
+    cnt = 0
+    ptn = 1
+    tckfl = false
+    
+    lmt = Math.pow(2, rsz * rsz) //just for stats
+    
+    rnd = setInterval(function(){
+        if (cnt < cntLmt && !tckfl){
+            tick()
+            cnt++;
+        } else {
+            initGrid()
+            var tl = Math.floor(gridSize/2-rsz/2)
+            drawStamp(patternFromInt(ptn, rsz), tl, tl)
+            ptn = (ptn+1)%Math.pow(2,rsz*rsz);
+            cnt = 0;
+            tckfl = false
+        }
+        lastGrid = grid
+        var sts = [["pattern space", rsz],
+                   ["pattern tot.", lmt],
+                   ["pattern no", ptn],
+                   ["tick no", cnt]]
+        prnt(sts)
+    }, 5)
+}
+
+function prnt(rws){
+    var fntsz = 20
+    var brdr = 5
+    var lnspc = 2
+    ctx.font = fntsz.toString() + "px monospace"
+    ctx.fillStyle = "white"
+    for (var r = 0; r < rws.length; r++){
+        ctx.fillText(rws[r][0]+" : "+rws[r][1].toString(), brdr, (r+1)*(fntsz+lnspc)+brdr)
+    }
+}
+
+function patternFromInt(n, sz){
+    var rws = (n).toString(2).padStart(sz*sz, '0').match(new RegExp('.{1,'+sz+'}', 'g'))
+    var ptrn = []
+    for (var ri = 0; ri < sz; ri++){
+        var r = []
+        for (var ci = 0; ci < sz; ci++){
+            r.push(parseInt(rws[ri][ci]))
+        }
+        ptrn.push(r)
+    }
+    return ptrn
+}
+
+function identical(a1, a2){
+    for (var r = 0; r < a1.length; r++){
+        for (var c = 0; c < a1.length; c++){
+            if (a1[r][c] != a2[r][c]) return false
+        }
+    }
+    return true
+}
+
+function drawStamp(ptrn, r, c){ //r, c is position of top left of stamp
+    for (var ri= 0; ri < ptrn.length; ri++){
+        for (var ci= 0; ci < ptrn[0].length; ci++){
+            if (ptrn[ri][ci]) grid[r+ri][c+ci] = !grid[r+ri][c+ci]
         }
     }
     draw()
@@ -81,15 +127,16 @@ function tick(){
             nghbrs = [[r+1,c], [r+1,c+1], [r, c+1], [r-1,c+1], [r-1,c], [r-1,c-1], [r,c-1], [r+1,c-1]]
             nghbrs = nghbrs.filter(n => n[0] >= 0 && n[1] >= 0 && n[0] < gridSize && n[1] < gridSize)
             alv = nghbrs.filter(n => grid[n[0]][n[1]])
-            if (grid[r][c] && alv.length == 2 || alv.length == 3){
+            if (grid[r][c] && (alv.length == 2 || alv.length == 3)){
                 gridCpy[r][c] = 1
-            } else if (alv.length == 3){
+            } else if (!grid[r][c] && alv.length == 3){
                 gridCpy[r][c] = 1
             } else {
                 gridCpy[r][c] = 0
             }
         }
     }
+    tckfl = identical(grid, gridCpy)
     grid = gridCpy
     draw()
 }
@@ -108,9 +155,40 @@ function draw(){
     }
 }
 
+function rotateStamp(d){    //-1 << left , right >> 1
+    var nwStmp = []
+    console.log(nwStmp)
+    for (var ri = 0; ri < stmp[0].length; ri++){
+        var r = []
+        for (var ci = 0; ci < stmp.length; ci++){
+            r.push(0)
+        }
+        nwStmp.push(r)
+        console.log(ri, r, nwStmp)
+    }
+    for (var ri = 0; ri < stmp.length; ri++){
+        for (var ci = 0; ci < stmp[0].length; ci++){
+            if (d == 1){ //right, transpose then reverse rows
+                nwStmp[ci][stmp.length-ri] = stmp[ri][ci]
+            } else {     //left,  reverse rows then transpose
+                nwStmp[stmp[0].length-ci][ri] = stmp[ri][ci]
+
+            }
+        }
+    }
+    stmp = nwStmp
+}
+
 cnvs.addEventListener("click", function (e){
     var r = Math.floor(e.offsetY / ss)
     var c = Math.floor(e.offsetX / ss)
-    grid[r][c] = 1
-    draw()
+    drawStamp(stmp, r, c)
+})
+
+window.addEventListener("keydown", function (e){
+    if (e.key in stmps){
+        stmp = stmps[e.key]
+    } else if (e.key == "ArrowLeft" || e.key == "ArrowRight"){
+        rotateStamp(e.key == "ArrowLeft" ? -1 : 1)
+    }
 })
