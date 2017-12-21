@@ -8,7 +8,7 @@ function resize(){
 
 window.addEventListener("resize", resize)
 
-gridSize = 32
+gridSize = 64
 
 resize()
 
@@ -28,6 +28,26 @@ initGrid()
 stmp = [[1]]
 rnd = 0
 
+ctx.fillStyle = "white"
+startup()
+
+function startup(){
+    ctx.textAlign = "center"
+    ctx.font = "40px monospace"
+    ctx.fillText("Welcome to Conway's Game of Life", cnvs.width/2, cnvs.height/5)
+    ctx.font = "20px monospace"
+    var lns = ["Control the simulation with these buttons -->",
+               "Use your mouse to create cells",
+               "There are hotkeys that change the pattern that your mouse creates",
+               "To do multiple ticks, press the tick button then hold Enter",
+               "Drag a rectangle with your mouse to destroy a section of cells"]
+    var lh = 50
+    for (var l = 0; l < lns.length; l++){
+        ctx.fillText(lns[l], cnvs.width/2, cnvs.height/2 - lh * (4 - l))
+    }
+}
+    
+
 function randScramble(){
     prob = parseFloat(prompt("1 probability"))
     for (var r = 0; r < gridSize; r++){
@@ -43,7 +63,11 @@ function dsplyHtks(){
             ["g", "glider"],
             ["l", "LWSS"],
             ["s", "shooter"],
-            ["entr", "run"]]
+            ["a", "annihilator"],
+            ["i", "infinite"],
+            ["entr", "run"],
+            ["left", "rotate anti-clck"],
+            ["right", "rotate clck"]]
     prnt(htks)
 }
 
@@ -82,7 +106,7 @@ function prnt(rws){
     var brdr = 5
     var lnspc = 2
     ctx.font = fntsz.toString() + "px monospace"
-    ctx.fillStyle = "white"
+    ctx.textAlign = "start"
     for (var r = 0; r < rws.length; r++){
         ctx.fillText(rws[r][0]+" : "+rws[r][1].toString(), brdr, (r+1)*(fntsz+lnspc)+brdr)
     }
@@ -113,7 +137,7 @@ function identical(a1, a2){
 function drawStamp(ptrn, r, c){ //r, c is position of top left of stamp
     for (var ri= 0; ri < ptrn.length; ri++){
         for (var ci= 0; ci < ptrn[0].length; ci++){
-            if (ptrn[ri][ci]) grid[r+ri][c+ci] = !grid[r+ri][c+ci]
+            grid[r+ri][c+ci] = ptrn[ri][ci]
         }
     }
     draw()
@@ -142,7 +166,6 @@ function tick(){
 }
 
 function fill(r, c){
-    ctx.fillStyle = "white"
     ctx.fillRect(c * ss, r * ss, ss, ss)
 }
 
@@ -157,21 +180,19 @@ function draw(){
 
 function rotateStamp(d){    //-1 << left , right >> 1
     var nwStmp = []
-    console.log(nwStmp)
     for (var ri = 0; ri < stmp[0].length; ri++){
         var r = []
         for (var ci = 0; ci < stmp.length; ci++){
             r.push(0)
         }
         nwStmp.push(r)
-        console.log(ri, r, nwStmp)
     }
     for (var ri = 0; ri < stmp.length; ri++){
         for (var ci = 0; ci < stmp[0].length; ci++){
             if (d == 1){ //right, transpose then reverse rows
-                nwStmp[ci][stmp.length-ri] = stmp[ri][ci]
+                nwStmp[ci][stmp.length-ri-1] = stmp[ri][ci]
             } else {     //left,  reverse rows then transpose
-                nwStmp[stmp[0].length-ci][ri] = stmp[ri][ci]
+                nwStmp[stmp[0].length-ci-1][ri] = stmp[ri][ci]
 
             }
         }
@@ -179,10 +200,24 @@ function rotateStamp(d){    //-1 << left , right >> 1
     stmp = nwStmp
 }
 
-cnvs.addEventListener("click", function (e){
-    var r = Math.floor(e.offsetY / ss)
-    var c = Math.floor(e.offsetX / ss)
-    drawStamp(stmp, r, c)
+cnvs.addEventListener("mousedown", function (e){
+    mouseR = Math.floor(e.offsetY / ss)
+    mouseC = Math.floor(e.offsetX / ss)
+})
+
+cnvs.addEventListener("mouseup", function(e){
+    var nr = Math.floor(e.offsetY / ss)
+    var nc = Math.floor(e.offsetX / ss)
+    if (nr == mouseR && nc == mouseC){  //if released in the same place
+        drawStamp(stmp, nr, nc)
+    } else {  //if released in diffrnt place, then blank that rectangle
+        for (var r = Math.min(mouseR, nr); r < Math.max(mouseR, nr); r++){
+            for (var c = Math.min(mouseC, nc); c < Math.max(mouseC, nc); c++){
+                grid[r][c] = 0
+            }
+        }
+        draw()
+    }
 })
 
 window.addEventListener("keydown", function (e){
